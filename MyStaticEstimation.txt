@@ -17,8 +17,8 @@ Where:
 - white_mobility / black_mobility: Total count of vacant adjacent positions ('x' in neighbors) accessible from each piece, measuring future midgame mobility.
 
 
-2. Why This Produces a Better Morris Player
--------------------------------------------
+2. Why This Produces a Better Morris Player (Opening)
+-----------------------------------------------------
 
 A. Overcoming Baseline Blindness:
 The baseline static estimation only calculates (numWhitePieces - numBlackPieces). During the opening, players take turns placing pieces. Until a mill is closed and a piece is removed, EVERY valid placement yields a score of 0 in the baseline function. Consequently, the baseline agent cannot distinguish between:
@@ -38,3 +38,44 @@ On this 23-node board, the bottom side lacks a downward connection between the i
 - Not all nodes are created equal: Nodes 1 and 4 are part of only 1 mill, whereas nodes 0, 2, 3, 5, 14, 16, 17, 19, 20, and 22 belong to 3 distinct mills.
 - Junction nodes such as 3, 5, 17, and 19 have degree 4 and participate in 3 mills.
 - By rewarding vacant adjacent neighbors (mobility) and multiline mill setups, the improved function favors controlling high-traffic junction nodes rather than getting trapped along bottlenecked paths or dead ends.
+
+
+========================================================================
+Static Estimation for Midgame & Endgame (StaticEstimationMidgameEndgameImproved)
+========================================================================
+
+1. Formula & Features
+---------------------
+Terminal Conditions:
+- If White pieces <= 2 or White has 0 legal moves: return -10000 (Black win)
+- If Black pieces <= 2 or Black has 0 legal moves: return +10000 (White win)
+- If both terminal: return 0
+
+Evaluation Formula:
+Score = 1000 * (numWhitePieces - numBlackPieces)
+      +  100 * (white_mills - black_mills)
+      +   50 * (white_threats - black_threats)
+      +   20 * (numWhiteMoves - numBlackMoves)
+      +   30 * (black_blocked - white_blocked)
+
+Where:
+- white_mills / black_mills: Count of closed 3-in-a-row mills.
+- white_threats / black_threats: Active 2-piece mill threats that CAN actually be closed on the player's next move (in hopping phase: 3 pieces; in sliding phase: an adjacent 3rd friendly piece can slide into the open spot).
+- numWhiteMoves / numBlackMoves: Total legal moves available to each player.
+- black_blocked / white_blocked: Count of pieces that have 0 vacant adjacent spots.
+
+
+2. Why This Produces a Better Morris Player (Midgame / Endgame)
+---------------------------------------------------------------
+
+A. Fixing Baseline Asymmetry and Missing Win/Loss Conditions:
+The baseline function only checked if Black had 0 moves, but completely omitted checking if White had 0 moves. It also subtracted numBlackMoves without considering White's legal moves. The improved function is fully symmetric: StaticEstimation(swapColors(board)) == -StaticEstimation(board).
+
+B. Detects Actionable Mill Threats (Running Mills):
+Unlike the opening, pieces in the midgame cannot teleport unless in the 3-piece endgame phase. The improved function specifically identifies 2-piece configurations where another friendly piece is adjacent and free to slide into the vacant spot. This rewards creating "running mills" (moving a piece back and forth to capture on alternate turns).
+
+C. Mobility and Preventing Paralysis:
+Nine Men's Morris games frequently end not by piece elimination, but by completely trapping the opponent so they have 0 legal moves. By scoring both legal move count (20) and penalized blocked pieces (30), the AI actively seeks to suffocate the opponent's pieces while preserving its own mobility.
+
+D. Exploiting the Board's Cul-de-Sac:
+Because the bottom ring lacks a connecting line downward, the bottom edge is prone to pieces getting cornered. Tracking blocked pieces and move counts makes the AI acutely aware of these danger zones, driving opponent pieces into dead ends and avoiding getting cornered itself.
