@@ -1,0 +1,40 @@
+Static Estimation for Opening Phase (StaticEstimationOpeningImproved)
+========================================================================
+
+1. Formula & Features
+---------------------
+Score = 1000 * (numWhitePieces - numBlackPieces)
+      +  100 * (white_mills - black_mills)
+      +   40 * (white_two_piece - black_two_piece)
+      +  130 * (white_forks - black_forks)
+      +   10 * (white_mobility - black_mobility)
+
+Where:
+- numWhitePieces / numBlackPieces: Total count of pieces on the board for White and Black.
+- white_mills / black_mills: Number of completed 3-in-a-row mills.
+- white_two_piece / black_two_piece: Number of 2-piece configurations where 2 spots contain the player's piece and the 3rd spot is empty ('x'). This represents an immediate threat to close a mill on the next turn.
+- white_forks / black_forks: Number of "fork" locations (empty spots 'x' that simultaneously complete two or more distinct 2-piece mill configurations for the player).
+- white_mobility / black_mobility: Total count of vacant adjacent positions ('x' in neighbors) accessible from each piece, measuring future midgame mobility.
+
+
+2. Why This Produces a Better Morris Player
+-------------------------------------------
+
+A. Overcoming Baseline Blindness:
+The baseline static estimation only calculates (numWhitePieces - numBlackPieces). During the opening, players take turns placing pieces. Until a mill is closed and a piece is removed, EVERY valid placement yields a score of 0 in the baseline function. Consequently, the baseline agent cannot distinguish between:
+- Threatening a mill vs placing a piece on a dead-end node.
+- Blocking an opponent's 2-piece threat vs ignoring it.
+- Setting up a double-mill fork vs playing randomly.
+StaticEstimationOpeningImproved differentiates every state with nuanced tactical and positional metrics.
+
+B. Prioritizing 2-Piece Mill Threats and Defensive Blocks:
+Forming a 2-piece line with an open 3rd spot forces the opponent to respond defensively. Rewarding this state encourages the AI to create active offensive threats. Because minimax alternates maximizing and minimizing, the agent naturally prioritizes blocking the opponent's 2-piece threats before they can execute a capture.
+
+C. Fork / Double-Mill Creation:
+A fork occurs when an empty intersection completes two separate 2-piece lines. Because an opponent can only place one piece on their turn, they cannot block both threats at once. This guarantees a closed mill and a capture on the following turn. Giving forks a high weight (130) drives the AI to construct inescapable tactical traps.
+
+D. Adapting to the Asymmetrical Board (The Missing Bottom Connection):
+On this 23-node board, the bottom side lacks a downward connection between the inner and outer squares. Consequently:
+- Not all nodes are created equal: Nodes 1 and 4 are part of only 1 mill, whereas nodes 0, 2, 3, 5, 14, 16, 17, 19, 20, and 22 belong to 3 distinct mills.
+- Junction nodes such as 3, 5, 17, and 19 have degree 4 and participate in 3 mills.
+- By rewarding vacant adjacent neighbors (mobility) and multiline mill setups, the improved function favors controlling high-traffic junction nodes rather than getting trapped along bottlenecked paths or dead ends.
