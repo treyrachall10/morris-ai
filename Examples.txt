@@ -1,0 +1,28 @@
+Example 1 - Opening
+
+Starting Board:
+xxBBWxxxxWxxxxxxxxxxxxx
+
+Original Move:
+Place White at position 0.
+
+Improved Move:
+Place White at position 8.
+
+Why We Prefer the Improved Move:
+The improved move creates a two piece mill opportunity at positions 8, 9, and 10. The original function only considers piece difference, so it doesn't see this future opportunity to complete a mill.
+
+
+Example 2 - Midgame/Endgame
+
+Starting Board:
+xxxxWBxWWxWBBxxBWxxWxWB
+
+Original Move:
+Move White from position 10 to position 14.
+
+Improved Move:
+Move White from position 4 to position 3.
+
+Why We Prefer the Improved Move:
+The improved move gives White many more available moves while also keeping a future mill threat. The original function mainly looks at piece difference and reducing Black's available moves, so it does not see the increased mobility for White.

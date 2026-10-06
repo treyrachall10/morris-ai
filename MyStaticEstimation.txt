@@ -9,7 +9,7 @@ The features we used were:
 
       We selected them because:
             Piece difference: More pieces on the board for us usually means a stronger future board. This is more of a defense sort of approach where we prioritize keeping pieces on the board.
-            Completed mills: This reward completed mills because this is primarily how you win. Fomining a mill lets us remove the enemies piece, which will in turn improve our position.
+            Completed mills: This rewards completed mills because this is primarily how you win. Fomining a mill lets us remove the enemies piece, which will in turn improve our position.
             Two-piece mills: We track two piece mills because they show that we are clos eto completing a new mill. These are good opportunities for future offensive attacks.
             Forks: We give forks higher value because they create more than one mill threat at once. This can make it harder for the opponent to stop all mills.
             Mobility: We include mobility because placing pieces near more open spaces gives us more flexibility later on when playing. A position with more movement is more useful than one where we can't move as much.
@@ -30,3 +30,44 @@ The features we used were:
       We believe this static function is an improvement over the original static function because it looks at more than just the number of pieces on the board. The original static function only looked at the number of pieces on the board for both sides and took the difference.
       This looks at only the current state of the board and no potential openings like ours. Ours looks at things like future mills and forks so we can take advantage of attacks and boards that dont lay in the opponents favor. Giving weights to these situations that sort of look in the future
       let us consider other situations if the piece counts are similar.
+
+Static Estimation for midgame (StaticEstimationMidgameEndgameImproved)
+========================================================================
+The features we used were:
+      - Difference in number of pieces
+      - Completed mills
+      - Mill threats
+      - Number of legal moves
+      - Blocked pieces
+      - Terminal win/loss states
+
+      We selected them because:
+            Piece difference: More pieces on the board for us usually means a stronger future board. This is more of a defense sort of approach where we prioritize keeping pieces on the board.
+            Completed mills: Mills are important because they let us remove an opponent's piece and improve our position.
+            Mill threats: We track threats because they show when we are close to completing a mill within a future move.
+            Legal moves: More legal moves gives us more flexibility and makes it harder for us to get trapped by the opponent.
+            Blocked pieces: We reward positions where the opponent has more blocked pieces because those pieces can't move and become less useful for the other team.
+            Terminal win/loss states: We check these directly because if a player has two or fewer pieces, or no legal moves, the game is effectively decided.
+
+      We combined the features using this formula:
+            1000 * (white pieces - black pieces)
+            + 100 * (white mills - black mills)
+            + 50 * (white threats - black threats)
+            + 20 * (white moves - black moves)
+            + 30 * (black blocked pieces - white blocked pieces)
+      Returns this before above formula ^:
+            +10000 if Black has lost
+            -10000 if White has lost
+            0 if both are in a losing state
+
+      We selected these weights:
+            1000 for piece difference: Piece count is one of the biggest indicators of who is closer to winning or losing.
+            100 for mills: Completed mills are super valuable because they can lead to removing pieces.
+            50 for threats: Threats are useful because they may turn into mills soon, but they are not guaranteed so we don't weigh them as much as actual mills.
+            20 for legal moves: Having more moves is helpful, but it is a smaller advantage than pieces or mills.
+            30 for blocked pieces: Blocking the opponent limits their movement and can help push them towards a position of having no legal moves.
+            ±10000 for terminal states: An actual win or loss should outweigh every other feature.
+
+      We believe this static function is better becuase the original mainly considers piece difference and the number of moves available to Black. 
+      Our improves function also considers completed mills, future mill threats, blocked pieces, and number of moves available to both players. 
+      This gives a more completed view of the board and helps identify stronger future positions.
